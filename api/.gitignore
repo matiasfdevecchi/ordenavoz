@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.env
+/local-stack/volumes
+/local-stack/volume
+/logs
+uploads
+output
+.idea

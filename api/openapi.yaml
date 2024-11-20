@@ -1,0 +1,3349 @@
+openapi: 3.0.0
+info:
+  title: API de Categorías
+  version: 1.0.0
+  description: Una API para gestionar categorías.
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desarrollo local
+
+paths:
+  /:
+    get:
+      summary: Muestra la versión de la API
+      responses:
+        '200':
+          description: Versión de la API
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 1.0.0
+
+  /favicon.ico:
+    get:
+      summary: Favicon
+      responses:
+        '200':
+          description: Favicon
+          content:
+            image/x-icon:
+              schema:
+                type: string
+                format: binary
+
+  /accounts:
+    get:
+      tags:
+        - accounts
+      security:
+        - bearerAuth: []
+      summary: Lista todas las cuentas
+      parameters:
+        - in: query
+          name: ids
+          schema:
+            type: string
+          description: Lista de IDs de cuentas separados por comas
+          allowEmptyValue: true
+        - in: query
+          name: categoryIds
+          schema:
+            type: string
+          description: Lista de IDs de categorías separados por comas
+          allowEmptyValue: true
+        - in: query
+          name: active
+          schema:
+            type: boolean
+          description: Indica si se muestran todas las cuentas o solo las activas
+          allowEmptyValue: true
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Fecha de inicio del rango
+          allowEmptyValue: true
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Fecha de fin del rango
+          allowEmptyValue: true
+        - in: query
+          name: timeZone
+          schema:
+            type: string
+          description: Zona horaria del rango de métricas
+          allowEmptyValue: true
+      responses:
+        '200':
+          description: Una lista de cuentas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+    post:
+      tags:
+        - accounts
+      security:
+        - bearerAuth: []
+      summary: Crea una nueva cuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre de la cuenta
+                currency:
+                  $ref: '#/components/schemas/Currency'
+                balance:
+                  type: number
+                  description: El saldo inicial de la cuenta
+                forMercadoPago:
+                  type: boolean
+                  description: Indica si la cuenta es para Mercado Pago
+              required:
+                - name
+                - currency
+                - balance
+                - forMercadoPago
+      responses:
+        '201':
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Solicitud inválida
+
+  /accounts/{accountId}:
+    patch:
+      tags:
+        - accounts
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente una cuenta específica por su ID
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: number
+            description: El ID de la cuenta a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre de la cuenta
+                priority:
+                  type: number
+                  description: La prioridad de la cuenta
+                active:
+                  type: boolean
+                  description: Indica si la cuenta está activa
+                deleted:
+                  type: boolean
+                  description: Indica si la cuenta esta eliminada
+                forMercadoPago:
+                  type: boolean
+                  description: Indica si la cuenta es para Mercado Pago
+              description: Propiedades de la cuenta para actualizar
+      responses:
+        '200':
+          description: Cuenta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Cuenta no encontrada
+    delete:
+      tags:
+        - accounts
+      security:
+        - bearerAuth: []
+      summary: Elimina una cuenta específica por su ID
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: number
+            description: El ID de la cuenta a eliminar
+      responses:
+        '200':
+          description: Cuenta eliminada exitosamente
+        '404':
+          description: Cuenta no encontrada
+
+  /accounts/{accountId}/reassign-mercado-pago:
+    post:
+      tags:
+        - accounts
+      security:
+        - bearerAuth: []
+      summary: Reasigna una cuenta de Mercado Pago
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: number
+            description: El ID de la cuenta a reasignar
+      responses:
+        '200':
+          description: Cuenta reasignada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Cuenta no encontrada
+
+  /categories:
+    get:
+      tags:
+        - categories
+      summary: Lista todas las categorías
+      responses:
+        '200':
+          description: Una lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags:
+        - categories
+      security:
+        - bearerAuth: []
+      summary: Crea una nueva categoría
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre de la categoría
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen de la categoría
+              required:
+                - name
+                - images
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Solicitud inválida
+
+  /categories/{categoryId}:
+    patch:
+      tags:
+        - categories
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente una categoría específica por su ID
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: number
+            description: El ID de la categoría a actualizar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre de la categoría
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen de la categoría
+              description: Propiedades de la categoría para actualizar
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Categoría no encontrada
+
+    delete:
+      tags:
+        - categories
+      security:
+        - bearerAuth: []
+      summary: Elimina una categoría específica por su ID
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: number
+            description: El ID de la categoría a eliminar
+      responses:
+        '200':
+          description: Categoría eliminada exitosamente
+        '404':
+          description: Categoría no encontrada
+
+  /client-assistance/text:
+    post:
+      tags:
+        - client-assistance
+      summary: Crea una nueva asistencia de cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                  description: El ID de la sesión del cliente
+                content:
+                  type: string
+                  description: El contenido de la asistencia
+              required:
+                - sessionId
+                - content
+      responses:
+        '201':
+          description: Respondido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistanceAction'
+        '400':
+          description: Solicitud inválida
+
+  /health:
+    get:
+      summary: Verifica la salud del servicio
+      responses:
+        '200':
+          description: Servicio saludable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+
+  /ingredients:
+    get:
+      tags:
+        - ingredients
+      summary: Lista todos los ingredientes
+      responses:
+        '200':
+          description: Una lista de ingredientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingredient'
+
+    post:
+      tags:
+        - ingredients
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo ingrediente
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre del ingrediente
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen del ingrediente
+              required:
+                - name
+                - images
+      responses:
+        '201':
+          description: Ingrediente creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+        '400':
+          description: Solicitud inválida
+
+  /ingredients/{ingredientId}:
+    patch:
+      tags:
+        - ingredients
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente un ingrediente específico por su ID
+      parameters:
+        - in: path
+          name: ingredientId
+          required: true
+          schema:
+            type: number
+            description: El ID del ingrediente a actualizar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre del ingrediente
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen del ingrediente
+              description: Propiedades del ingrediente para actualizar
+      responses:
+        '200':
+          description: Ingrediente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Ingrediente no encontrado
+
+    delete:
+      tags:
+        - ingredients
+      security:
+        - bearerAuth: []
+      summary: Elimina una categoría específica por su ID
+      parameters:
+        - in: path
+          name: ingredientId
+          required: true
+          schema:
+            type: number
+            description: El ID del ingrediente a eliminar
+      responses:
+        '200':
+          description: Ingrediente eliminado exitosamente
+        '404':
+          description: Ingrediente no encontrado
+
+  /mercadopago/devices:
+    get:
+      tags:
+        - mercadopago
+      security:
+        - bearerAuth: []
+      summary: Lista todos los dispositivos de MercadoPago
+      parameters:
+        - in: query
+          name: page
+          required: true
+          schema:
+            type: integer
+            default: 0
+          description: Número de página de la lista de dispositivos de MercadoPago
+        - in: query
+          name: pageSize
+          required: true
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de dispositivos de MercadoPago por página
+      responses:
+        '200':
+          description: Una lista de dispositivos de MercadoPago
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MercadoPagoDevice'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationResult'
+
+  /mercadopago/devices/{mpDeviceId}/operating-mode:
+    patch:
+      tags:
+        - mercadopago
+      security:
+        - bearerAuth: []
+      summary: Actualiza el modo de operación de un dispositivo de MercadoPago
+      parameters:
+        - in: path
+          name: mpDeviceId
+          required: true
+          schema:
+            type: string
+            description: El ID del dispositivo de MercadoPago
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                operatingMode:
+                  type: string
+                  enum:
+                    - PDV
+                    - STANDALONE
+                  description: El modo de operación del dispositivo
+              required:
+                - operatingMode
+      responses:
+        '200':
+          description: Modo de operación actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MercadoPagoDevice'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Dispositivo de MercadoPago no encontrado
+  
+  /mercadopago/devices/{mpDeviceId}/payment-intents:
+    post:
+      tags:
+        - mercadopago
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo intento de pago en MercadoPago
+      parameters:
+        - in: path
+          name: mpDeviceId
+          required: true
+          schema:
+            type: string
+            description: El ID del dispositivo de MercadoPago
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: El monto del intento de pago
+                ticketNumber:
+                  type: string
+                  description: El número de ticket del intento de pago
+                externalReference:
+                  type: string
+                  description: El ID externo del intento de pago
+              required:
+                - amount
+                - ticketNumber
+                - externalReference
+      responses:
+        '201':
+          description: Intento de pago creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: El ID del intento de pago
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Dispositivo de MercadoPago no encontrado
+
+  /mercadopago/devices/{mpDeviceId}/payment-intents/{mpPaymentIntentId}:
+    delete:
+      tags:
+        - mercadopago
+      security:
+        - bearerAuth: []
+      summary: Elimina un intento de pago en MercadoPago
+      parameters:
+        - in: path
+          name: mpDeviceId
+          required: true
+          schema:
+            type: string
+            description: El ID del dispositivo de MercadoPago
+        - in: path
+          name: mpPaymentIntentId
+          required: true
+          schema:
+            type: string
+            description: El ID del intento de pago en MercadoPago
+      responses:
+        '200':
+          description: Intento de pago eliminado exitosamente
+        '404':
+          description: Intento de pago no encontrado
+
+  /mercadopago/stores:
+    get:
+      summary: Obtiene todas las tiendas
+      operationId: getAllStores
+      responses:
+        '200':
+          description: Lista de tiendas del usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+        '400':
+          description: Solicitud inválida (p.ej., mpUserId faltante o inválido)
+        '404':
+          description: Usuario o tiendas no encontradas
+        '500':
+          description: Error interno del servidor
+    post:
+      summary: Crea una nueva tienda en MercadoPago
+      operationId: createStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mpUserId:
+                  type: number
+                  description: ID del usuario de MercadoPago
+                storeId:
+                  type: string
+                  description: ID de la tienda en MercadoPago
+                externalId:
+                  type: string
+                  description: ID externo para la tienda
+              required:
+                - mpUserId
+                - storeId
+                - externalId
+      responses:
+        '201':
+          description: Tienda creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+        '400':
+          description: Solicitud inválida (p.ej., parámetros faltantes o inválidos)
+        '500':
+          description: Error interno del servidor
+
+  /mercadopago/stores/{mpStoreId}:
+    delete:
+      summary: Elimina una tienda específica por su ID
+      operationId: deleteStore
+      parameters:
+        - name: mpStoreId
+          in: path
+          required: true
+          description: El ID de la tienda de MercadoPago
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tienda eliminada exitosamente
+        '400':
+          description: Solicitud inválida (p.ej., mpStoreId faltante o inválido)
+        '404':
+          description: Tienda no encontrada
+        '500':
+          description: Error interno del servidor
+
+  /mercadopago-services/{mpUserId}/stores:
+    get:
+      summary: Obtiene todas las tiendas de un usuario de MercadoPago
+      operationId: getAllMercadoPagoStores
+      parameters:
+        - name: mpUserId
+          in: path
+          required: true
+          description: El ID del usuario de MercadoPago
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de tiendas del usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+        '400':
+          description: Solicitud inválida (p.ej., mpUserId faltante o inválido)
+        '404':
+          description: Usuario o tiendas no encontradas
+        '500':
+          description: Error interno del servidor
+
+  /mercadopago/cashiers:
+    get:
+      summary: Obtiene todas las cajas
+      operationId: getAllCashiers
+      responses:
+        '200':
+          description: Lista de cajas (cashiers)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cashier'
+        '400':
+          description: Solicitud inválida (p.ej., mpStoreId faltante o inválido)
+        '404':
+          description: Tienda o cajas no encontradas
+        '500':
+          description: Error interno del servidor
+    post:
+      summary: Crea una nueva caja (cashier) en MercadoPago
+      operationId: createCashier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                storeId:
+                  type: string
+                  description: ID de la tienda en MercadoPago a la que pertenece la caja
+                cashierId:
+                  type: number
+                  description: ID de la caja en MercadoPago
+                externalId:
+                  type: string
+                  description: ID externo para la caja
+              required:
+                - storeId
+                - cashierId
+                - externalId
+      responses:
+        '201':
+          description: Caja creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cashier'
+        '400':
+          description: Solicitud inválida (p.ej., parámetros faltantes o inválidos)
+        '500':
+          description: Error interno del servidor
+
+  /mercadopago/cashiers/{mpCashierId}:
+    delete:
+      summary: Elimina una caja específica por su ID
+      operationId: deleteCashier
+      parameters:
+        - name: mpCashierId
+          in: path
+          required: true
+          description: El ID de la caja de MercadoPago
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Caja eliminada exitosamente
+        '400':
+          description: Solicitud inválida (p.ej., mpCashierId faltante o inválido)
+        '404':
+          description: Caja no encontrada
+        '500':
+          description: Error interno del servidor
+
+  /mercadopago-services/stores/{mpStoreId}/cashiers:
+    get:
+      summary: Obtiene todas las cajas de una tienda específica
+      operationId: getAllMercadoPagoCashiers
+      parameters:
+        - name: mpStoreId
+          in: path
+          required: true
+          description: El ID de la tienda de MercadoPago
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de cajas (cashiers) de la tienda
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cashier'
+        '400':
+          description: Solicitud inválida (p.ej., mpStoreId faltante o inválido)
+        '404':
+          description: Tienda o cajas no encontradas
+        '500':
+          description: Error interno del servidor
+
+  /mercado-pago-webhook:
+    post:
+      tags:
+        - mercado-pago-webhook
+      summary: Recibe notificaciones de Mercado Pago
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Notificación recibida
+
+  /movements:
+    get:
+      tags:
+        - movements
+      security:
+        - bearerAuth: []
+      summary: Lista todos los movimientos
+      parameters:
+        - in: query
+          name: page
+          required: true
+          schema:
+            type: integer
+            default: 0
+          description: Número de página de la lista de movimientos
+        - in: query
+          name: pageSize
+          required: true
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de movimientos por página
+        - in: query
+          name: accountIds
+          schema:
+            type: string
+          description: Lista de IDs de cuentas separados por comas
+          allowEmptyValue: true
+        - in: query
+          name: categoryIds
+          schema:
+            type: string
+          description: Lista de IDs de categorías separados por comas
+          allowEmptyValue: true
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha de inicio del rango
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha de fin del rango
+        - in: query
+          name: timeZone
+          required: true
+          schema:
+            type: string
+          description: Zona horaria del rango de métricas
+      responses:
+        '200':
+          description: Una lista paginada de movimientos con información de paginación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pagination:
+                    $ref: '#/components/schemas/PaginationResult'
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movement'
+
+    post:
+      tags:
+        - movements
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo movimiento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  description: La descripción del movimiento
+                accountId:
+                  type: number
+                  description: El ID de la cuenta del movimiento
+                categoryId:
+                  type: number
+                  description: El ID de la categoría del movimiento
+                amount:
+                  type: number
+                  description: El monto del movimiento
+                type:
+                  type: string
+                  enum:
+                    - INCOME
+                    - EXPENSE
+                  description: El tipo de movimiento
+              required:
+                - categoryId
+                - description
+                - accountId
+                - amount
+                - type
+      responses:
+        '201':
+          description: Movimiento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        '400':
+          description: Solicitud inválida
+
+  /movement-categories:
+    post:
+      tags:
+        - movement-categories
+      security:
+        - bearerAuth: []
+      summary: Crea un nueva categoría de movimiento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre de la categoría
+              required:
+                - name
+      responses:
+        '201':
+          description: Categoria de movimiento creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementCategory'
+        '400':
+          description: Solicitud inválida
+    get:
+      tags:
+        - movement-categories
+      security:
+        - bearerAuth: []
+      summary: Lista todas las categorías de movimiento
+      responses:
+        '200':
+          description: Una lista de categorías de movimiento
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovementCategory'
+
+  /movement-categories/{categoryId}:
+    patch:
+      tags:
+        - movement-categories
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente una categoría de movimiento específica por su ID
+      parameters:
+        - in: path
+          name: categoryId
+          required: true
+          schema:
+            type: number
+            description: El ID de la categoría de movimiento a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              description: Propiedades de la categoría de movimiento para actualizar
+      responses:
+        '200':
+          description: Categoría de movimiento actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementCategory'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Categoría de movimiento no encontrada
+
+  /orders:
+    get:
+      tags:
+        - orders
+      summary: Lista todas las órdenes
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - PAYMENT_PENDING
+              - PREPARING
+              - READY
+              - COMPLETED
+              - CANCELED
+          description: El estado de las órdenes a filtrar
+          allowEmptyValue: true
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum:
+              - ASC
+              - DESC
+          description: El orden de las órdenes
+          allowEmptyValue: true
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+          description: Número de página de la lista de ingresos de mercadería
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de ingresos de mercadería por página
+
+      responses:
+        '200':
+          description: Una lista de órdenes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      tags:
+        - orders
+      summary: Crea una nueva orden
+      requestBody:
+        description: Datos necesarios para crear una nueva orden
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Orden creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Solicitud inválida
+        '500':
+          description: Error interno del servidor
+
+  /orders/{orderId}:
+    get:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Obtiene una orden específica por su ID
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+          description: El ID de la orden a obtener
+      responses:
+        '200':
+          description: Orden encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Orden no encontrada
+    patch:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente una orden específica por su ID
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+            description: El ID de la orden a actualizar
+      requestBody:
+        description: Datos necesarios para actualizar una orden
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - PAYMENT_PENDING
+                    - PREPARING
+                    - READY
+                    - COMPLETED
+                    - CANCELED
+                  description: El estado de la orden
+              required:
+                - status
+      responses:
+        '200':
+          description: Orden actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Orden no encontrada
+
+  /orders/{orderId}/pay:
+    post:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Paga una orden
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+          description: El ID de la orden a pagar
+      requestBody:
+        description: Datos necesarios para pagar una orden
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                method:
+                  type: string
+                  enum:
+                    - cash
+                    - card
+                  description: El método de pago de la orden
+                amount:
+                  type: number
+                  description: El monto a pagar
+              required:
+                - method
+                - amount
+      responses:
+        '200':
+          description: Orden pagada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Solicitud inválida
+        '404':
+          description: Orden no encontrada
+
+  /orders/{orderId}/pay-mercadopago-qr:
+    post:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Paga una orden con Mercado Pago QR
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+          description: El ID de la orden a pagar
+      requestBody:
+        description: Datos necesarios para pagar una orden con Mercado Pago QR
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cashierId:
+                  type: number
+                  description: El ID de la caja de Mercado Pago
+              required:
+                - cashierId
+      responses:
+        '204':
+          description: Orden pagada exitosamente
+        '400':
+          description: Solicitud inválida
+        '404':
+          description: Orden no encontrada
+
+  /orders/{orderId}/pay-mercadopago-dynamic-qr:
+    post:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Paga una orden con Mercado Pago QR
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+          description: El ID de la orden a pagar
+      responses:
+        '200':
+          description: Orden pagada exitosamente
+        '400':
+          description: Solicitud inválida
+        '404':
+          description: Orden no encontrada
+
+  /orders/{orderId}/pay-mercadopago-point:
+    post:
+      tags:
+        - orders
+      security:
+        - bearerAuth: []
+      summary: Paga una orden con Mercado Pago Point
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: number
+          description: El ID de la orden a pagar
+      requestBody:
+        description: Datos necesarios para pagar una orden con Mercado Pago Point
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceId:
+                  type: string
+                  description: El ID del dispositivo de Mercado Pago
+              required:
+                - deviceId
+      responses:
+        '204':
+          description: Orden pagada exitosamente
+        '400':
+          description: Solicitud inválida
+        '404':
+          description: Orden no encontrada
+
+  /products:
+    get:
+      tags:
+        - products
+      summary: Lista todos los productos
+      parameters:
+        - in: query
+          name: categoryId
+          schema:
+            type: number
+          description: El ID de la categoría del producto
+          allowEmptyValue: true
+      responses:
+        '200':
+          description: Una lista de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+    post:
+      tags:
+        - products
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo producto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre del producto
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen del producto
+                price:
+                  type: string
+                  description: El precio del producto
+                category:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: El ID único de la categoría
+                  required:
+                    - id
+                ingredients:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      ingredient:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: El ID único del ingrediente
+                        required:
+                          - id
+                      quantity:
+                        type: number
+                        description: La cantidad del ingrediente
+                  description: Los ingredientes del producto
+              required:
+                - name
+                - images
+                - price
+                - category
+                - ingredients
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Solicitud inválida
+
+  /products/{productId}:
+    get:
+      tags:
+        - products
+      security:
+        - bearerAuth: []
+      summary: Obtiene un producto específico por su ID
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: number
+          description: El ID del producto a obtener
+      responses:
+        '200':
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Producto no encontrado
+    patch:
+      tags:
+        - products
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente un producto específico por su ID
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: number
+            description: El ID del producto a actualizar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre del producto
+                images:
+                  type: string
+                  format: binary
+                  description: La imagen del producto
+                price:
+                  type: string
+                  description: El precio del producto
+                category:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      description: El ID único de la categoría
+                  required:
+                    - id
+                ingredients:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      ingredient:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: El ID único del ingrediente
+                        required:
+                          - id
+                      quantity:
+                        type: number
+                        description: La cantidad del ingrediente
+                  description: Los ingredientes del producto
+      responses:
+        '200':
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Producto no encontrado
+
+    delete:
+      tags:
+        - products
+      security:
+        - bearerAuth: []
+      summary: Elimina un producto específico por su ID
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: number
+            description: El ID del producto a eliminar
+      responses:
+        '200':
+          description: Producto eliminado exitosamente
+        '404':
+          description: Producto no encontrado
+
+  /providers:
+    post:
+      tags:
+        - providers
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo proveedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: El nombre del proveedor
+              required:
+                - name
+      responses:
+        '201':
+          description: Proveedor creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        '400':
+          description: Solicitud inválida
+    get:
+      tags:
+        - providers
+      security:
+        - bearerAuth: []
+      summary: Lista todos los proveedores
+      responses:
+        '200':
+          description: Una lista de proveedores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Provider'
+
+  /public-sales:
+    post:
+      tags:
+        - sales
+      summary: Crea una nueva venta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client:
+                  $ref: '#/components/schemas/SaleClient'
+                delivery:
+                  type: object
+                  properties:
+                    storePickup:
+                      $ref: '#/components/schemas/SaleDeliveryStorePickup'
+                    homeDelivery:
+                      $ref: '#/components/schemas/SaleDeliveryShipping'
+                comment:
+                  type: string
+                products:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        format: int64
+                      stock:
+                        type: object
+                        properties:
+                          quantity:
+                            type: integer
+                            format: int32
+                    required:
+                      - productId
+                      - stock
+                onlineStorePaymentMethod:
+                  type: string
+                  enum:
+                    - mercado_pago
+                    - transfer
+                    - cash
+                  description: El método de pago de la tienda en línea
+                webBaseUrl:
+                  type: string
+                  description: La URL base de la tienda en línea
+              required:
+                - client
+                - delivery
+                - products
+                - onlineStorePaymentMethod
+                - webBaseUrl
+      responses:
+        '201':
+          description: Venta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '400':
+          description: Solicitud inválida
+
+  /public-sales/bulk/codes/{code}:
+    get:
+      tags:
+        - sales
+      summary: Obtiene una venta específica por su ID
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+          description: El codigo de la venta a obtener
+      responses:
+        '200':
+          description: Venta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+
+  /receivings:
+    post:
+      tags:
+        - receivings
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo ingreso de mercadería
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: number
+                  description: El ID del proveedor del ingreso de mercadería
+                description:
+                  type: string
+                  description: La descripción del ingreso de mercadería
+                products:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            description: El ID único del producto
+                        required:
+                          - id
+                      stock:
+                        $ref: '#/components/schemas/Stock'
+                        description: El stock del producto
+                      cost:
+                        type: number
+                        description: El precio del producto
+                    required:
+                      - product
+                      - stock
+                      - cost
+                movements:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      accountId:
+                        type: number
+                        description: El ID de la cuenta del movimiento
+                      amount:
+                        type: number
+                        description: El monto del movimiento
+                    required:
+                      - accountId
+                      - amount
+              required:
+                - providerId
+                - products
+                - description
+                - movements
+      responses:
+        '201':
+          description: Ingreso de mercadería creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receiving'
+        '400':
+          description: Solicitud inválida
+
+    get:
+      tags:
+        - receivings
+      security:
+        - bearerAuth: []
+      summary: Lista todos los ingresos de mercadería
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+          description: Número de página de la lista de ingresos de mercadería
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de ingresos de mercadería por página
+        - in: query
+          name: providerId
+          schema:
+            type: number
+          description: El ID del proveedor del ingreso de mercadería
+          allowEmptyValue: true
+      responses:
+        '200':
+          description: Una lista paginada de ingresos de mercadería con información de paginación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pagination:
+                    $ref: '#/components/schemas/PaginationResult'
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Receiving'
+
+  /receivings/{receiving_id}:
+    delete:
+      tags:
+        - receivings
+      security:
+        - bearerAuth: []
+      summary: Elimina un ingreso de mercadería específico por su ID
+      parameters:
+        - in: path
+          name: receiving_id
+          required: true
+          schema:
+            type: number
+            description: El ID del ingreso de mercadería a eliminar
+      responses:
+        '200':
+          description: Ingreso de mercadería eliminado exitosamente
+        '404':
+          description: Ingreso de mercadería no encontrado
+
+  /sales:
+    get:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Lista todas las ventas
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+          description: Número de página de la lista de ventas
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de ventas por página
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: El ID de la venta
+          allowEmptyValue: true
+        - in: query
+          name: clientName
+          schema:
+            type: string
+          description: El nombre del cliente
+          allowEmptyValue: true
+        - in: query
+          name: clientDni
+          schema:
+            type: string
+          description: El DNI del cliente
+          allowEmptyValue: true
+        - in: query
+          name: status
+          allowEmptyValue: true
+          schema:
+            type: string
+          description: Filtro por estado de venta
+        - in: query
+          name: internalStatus
+          allowEmptyValue: true
+          schema:
+            type: string
+          description: Filtro por estado interno de venta
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Fecha de inicio del rango
+          allowEmptyValue: true
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Fecha de fin del rango
+          allowEmptyValue: true
+        - in: query
+          name: timeZone
+          schema:
+            type: string
+          description: Zona horaria del rango de métricas
+          allowEmptyValue: true
+        - in: query
+          name: shipping
+          allowEmptyValue: true
+          schema:
+            type: boolean
+          description: Filtro por envío
+      responses:
+        '200':
+          description: Una lista paginada de ventas con información de paginación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pagination:
+                    $ref: '#/components/schemas/PaginationResult'
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sale'
+    post:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Crea una nueva venta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client:
+                  $ref: '#/components/schemas/SaleClient'
+                delivery:
+                  type: object
+                  properties:
+                    storePickup:
+                      $ref: '#/components/schemas/SaleDeliveryStorePickup'
+                    homeDelivery:
+                      $ref: '#/components/schemas/SaleDeliveryShipping'
+                comment:
+                  type: string
+                products:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        format: int64
+                      stock:
+                        type: object
+                        properties:
+                          quantity:
+                            type: integer
+                            format: int32
+                    required:
+                      - productId
+                      - stock
+              required:
+                - client
+                - delivery
+                - products
+
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Solicitud inválida
+    
+  /sales/{saleId}:
+    delete:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Elimina una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a eliminar
+      responses:
+        '200':
+          description: Venta eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+    get:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Obtiene una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a obtener
+      responses:
+        '200':
+          description: Venta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+    patch:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Actualiza parcialmente una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                internalStatus:
+                  $ref: '#/components/schemas/SaleInternalStatus'
+      responses:
+        '200':
+          description: Venta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Venta no encontrada
+
+  /sales/{saleId}/pay:
+    post:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Paga una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a pagar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                details:
+                  type: object
+                  properties:
+                    accountId:
+                      type: number
+                      description: El ID de la cuenta de pago
+                    amount:
+                      type: number
+                      description: El monto del pago
+                  required:
+                    - accountId
+                    - amount
+                comment:
+                  type: string
+                  description: La descripción del pago
+                transferReceipts:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: string
+                        format: binary
+                      description: Comprobantes de transferencia
+                    - type: string
+                      format: binary
+                      description: Una sola imagen del producto
+                  description: Comprobante de transferencia
+              required:
+                - details
+      responses:
+        '200':
+          description: Venta pagada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+
+  /sales/{saleId}/multiple-pay:
+    post:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Paga una venta específica por su ID con múltiples pagos
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a pagar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                partiallyPaid:
+                  type: string
+                  description: Indica si la venta fue parcialmente pagada
+                receivingProducts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: number
+                      stock:
+                        type: number
+                        description: La cantidad de stock
+                      price:
+                        type: number
+                        description: El precio del producto
+                      description:
+                        type: string
+                        description: La descripción del producto
+                    required:
+                      - productId
+                      - stock
+                      - price
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      details:
+                        type: object
+                        properties:
+                          accountId:
+                            type: number
+                            description: El ID de la cuenta de pago
+                          amount:
+                            type: number
+                            description: El monto del pago
+                        required:
+                          - accountId
+                          - amount
+                      comment:
+                        type: string
+                        description: La descripción del pago
+                      transferReceipts:
+                        oneOf:
+                          - type: array
+                            items:
+                              type: string
+                              format: binary
+                            description: Comprobantes de transferencia
+                          - type: string
+                            format: binary
+                            description: Una sola imagen del producto
+                        description: Comprobante de transferencia
+                    required:
+                      - details
+      responses:
+        '200':
+          description: Venta pagada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+
+  /sales/{saleId}/complete:
+    post:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Completa una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a completar
+      responses:
+        '200':
+          description: Venta completada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+
+  /sales/{saleId}/cancel:
+    post:
+      tags:
+        - sales
+      security:
+        - bearerAuth: []
+      summary: Cancela una venta específica por su ID
+      parameters:
+        - in: path
+          name: saleId
+          required: true
+          schema:
+            type: number
+            description: El ID de la venta a cancelar
+      responses:
+        '200':
+          description: Venta cancelada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+
+  /users:
+    get:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Lista todos los usuarios
+      responses:
+        '200':
+          description: Una lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Crea un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: El email del usuario
+                name:
+                  type: string
+                  description: El nombre del usuario
+                password:
+                  type: string
+                  description: La contraseña del usuario
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - manager
+                    - employee
+                  description: El rol del usuario
+              required:
+                - email
+                - password
+                - role
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Solicitud inválida
+
+  /users/{userId}:
+    delete:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Elimina un usuario específico por su ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            description: El ID del usuario a eliminar
+      responses:
+        '200':
+          description: Usuario eliminado exitosamente
+        '404':
+          description: Usuario no encontrado
+
+  /users/{userId}/reset-password:
+    post:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Resetea la contraseña de un usuario específico por su ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            description: El ID del usuario a resetear la contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: La nueva contraseña del usuario
+              required:
+                - password
+      responses:
+        '204':
+          description: Contraseña de usuario reseteada exitosamente
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Usuario no encontrado
+
+  /users/{userId}/change-password:
+    post:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Cambia la contraseña de un usuario específico por su ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            description: El ID del usuario a cambiar la contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                  description: La contraseña actual del usuario
+                password:
+                  type: string
+                  description: La nueva contraseña del usuario
+              required:
+                - oldPassword
+                - password
+      responses:
+        '204':
+          description: Contraseña de usuario cambiada exitosamente
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Usuario no encontrado
+
+  /users/{userId}/roles:
+    put:
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      summary: Actualiza el rol de un usuario específico por su ID
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            description: El ID del usuario a actualizar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - manager
+                    - employee
+                  description: El rol del usuario
+              required:
+                - role
+      responses:
+        '204':
+          description: Rol de usuario actualizado exitosamente
+        '400':
+          description: Datos de entrada inválidos
+        '404':
+          description: Usuario no encontrado
+
+  /metrics/sales:
+    get:
+      tags:
+        - metrics
+      security:
+        - bearerAuth: []
+      summary: Obtiene las métricas de ventas
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Fecha de inicio del rango de métricas
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Fecha de fin del rango de métricas
+        - in: query
+          name: timeZone
+          schema:
+            type: string
+          description: Zona horaria del rango de métricas
+      responses:
+        '200':
+          description: Métricas de ventas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                    format: double
+                    description: Total de ventas
+                  count:
+                    type: integer
+                    format: int32
+                    description: Cantidad de ventas
+                  average:
+                    type: number
+                    format: double
+                    description: Promedio de ventas
+                  min:
+                    type: number
+                    format: double
+                    description: Venta mínima
+                  max:
+                    type: number
+                    format: double
+                    description: Venta máxima
+                  from:
+                    type: string
+                    format: date-time
+                    description: Fecha de inicio del rango de métricas
+                  to:
+                    type: string
+                    format: date-time
+                    description: Fecha de fin del rango de métricas
+
+  /metrics/sales/payments:
+    get:
+      tags:
+        - metrics
+      security:
+        - bearerAuth: []
+      summary: Obtiene las métricas de pagos
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Fecha de inicio del rango de métricas
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: Fecha de fin del rango de métricas
+        - in: query
+          name: timeZone
+          schema:
+            type: string
+          description: Zona horaria del rango de métricas
+      responses:
+        '200':
+          description: Métricas de pagos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                    format: double
+                    description: Total de pagos
+                  count:
+                    type: integer
+                    format: int32
+                    description: Cantidad de pagos
+                  average:
+                    type: number
+                    format: double
+                    description: Promedio de pagos
+                  min:
+                    type: number
+                    format: double
+                    description: Pago mínimo
+                  max:
+                    type: number
+                    format: double
+                    description: Pago máximo
+                  from:
+                    type: string
+                    format: date-time
+                    description: Fecha de inicio del rango de métricas
+                  to:
+                    type: string
+                    format: date-time
+                    description: Fecha de fin del rango de métricas
+
+  /text-to-speech:
+    get:
+      tags:
+        - test
+      summary: Prueba de autenticación
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Prueba exitosa
+
+  /speech-to-text:
+    post:
+      summary: Transcribe audio to text
+      description: Recibe un archivo de audio y lo transcribe a texto usando OpenAI Whisper.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  type: string
+                  description: Archivo de audio a transcribir.
+      responses:
+        '200':
+          description: Transcripción exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transcription:
+                    type: string
+                    description: Texto transcrito.
+        '400':
+          description: Error en la solicitud
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Error en la transcripción
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /web-configs:
+    post:
+      tags:
+        - web-configs
+      security:
+        - bearerAuth: []
+      summary: Crea o actualiza la configuración web
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                backofficePrinterUrl:
+                  type: string
+                  description: La URL de la impresora del backoffice
+                clientPrinterUrl:
+                  type: string
+                  description: La URL de la impresora del cliente
+
+      responses:
+        '201':
+          description: Configuración web creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebConfig'
+        '400':
+          description: Solicitud inválida
+
+  /web-configs/unique:
+    get:
+      tags:
+        - web-configs
+      summary: Obtiene la configuración web
+      responses:
+        '200':
+          description: Configuración web encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebConfig'
+        '404':
+          description: Configuración web no encontrada
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único de la cuenta
+        name:
+          type: string
+          description: El nombre de la cuenta
+        currency:
+          $ref: '#/components/schemas/Currency'
+          description: La moneda de la cuenta
+        balance:
+          type: number
+          description: El saldo de la cuenta
+        priority:
+          type: number
+          description: La prioridad de la cuenta
+        active:
+          type: boolean
+          description: Indica si la cuenta está activa
+        deleted:
+          type: boolean
+          description: Indica si la cuenta está eliminada
+      required:
+        - id
+        - name
+        - currency
+        - balance
+        - priority
+        - active
+        - deleted
+
+    AssistanceAction:
+      type: object
+
+    Currency:
+      type: string
+      enum:
+        - ARS
+        - USD
+        - USDT
+        - BTC
+
+    Movement:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del movimiento
+        description:
+          type: string
+          description: La descripción del movimiento
+        account:
+          $ref: '#/components/schemas/Account'
+          description: La cuenta del movimiento
+        balance:
+          type: number
+          description: El saldo de la cuenta después del movimiento
+        value:
+          $ref: '#/components/schemas/Price'
+          description: El valor del movimiento
+        type:
+          type: string
+          enum:
+            - INCOME
+            - EXPENSE
+          description: El tipo de movimiento
+        date:
+          type: string
+          format: date-time
+          description: La fecha del movimiento
+        userId:
+          type: string
+          description: El ID único del usuario que realizó el movimiento
+      required:
+        - id
+        - description
+        - account
+        - balance
+        - value
+        - type
+        - date
+        - userId
+
+    MovementCategory:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único de la categoría de movimiento
+        name:
+          type: string
+          description: El nombre de la categoría de movimiento
+      required:
+        - id
+        - name
+
+    Price:
+      type: object
+      properties:
+        amount:
+          type: number
+          description: El monto del precio
+      required:
+        - amount
+    
+    Stock:
+      type: object
+      properties:
+        quantity:
+          type: number
+          description: La cantidad de stock
+      required:
+        - quantity
+        
+    Cashier:
+      type: object
+      properties:
+        id:
+          type: number
+          description: ID de la caja
+        name:
+          type: string
+          description: Nombre de la caja
+        dateCreation:
+          type: string
+          format: date-time
+          description: Fecha de creación de la caja
+        externalId:
+          type: string
+          nullable: true
+          description: ID externo de la caja (si está disponible)
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único de la categoría
+        name:
+          type: string
+          description: El nombre de la categoría
+        image:
+          type: string
+          description: La imagen de la categoría
+      required:
+        - id
+        - name
+        - image
+
+    CreateOrderRequest:
+      type: object
+      properties:
+        from:
+          type: string
+          enum:
+            - backoffice
+            - client
+        printPendingTicket:
+          type: boolean
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product:
+                type: object
+                properties:
+                  id:
+                    type: number
+                required:
+                  - id
+              price:
+                type: number
+              variants:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    removedIngredients:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          ingredient:
+                            type: object
+                            properties:
+                              id:
+                                type: number
+                            required:
+                              - id
+                          quantity:
+                            type: number
+                        required:
+                          - ingredient
+                          - quantity
+                    quantity:
+                      type: number
+                  required:
+                    - removedIngredients
+                    - quantity
+            required:
+              - product
+              - price
+              - variants
+      required:
+        - items
+
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del ingrediente
+        name:
+          type: string
+          description: El nombre del ingrediente
+        image:
+          type: string
+          description: La imagen del ingrediente
+      required:
+        - id
+        - name
+        - image
+
+    MercadoPagoDevice:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del dispositivo
+        posId:
+          type: number
+          description: El ID del punto de venta
+        storeId:
+          type: number
+          description: El ID de la tienda
+        externalPosId:
+          type: string
+          description: El ID externo del punto de venta
+        operatingMode:
+          type: string
+          enum:
+            - TEST
+            - PRODUCTION
+          description: El modo de operación del dispositivo
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID de la orden
+        dateCreated:
+          type: string
+          format: date-time
+          description: Fecha de creación de la orden
+        status:
+          type: string
+          enum:
+            - PAYMENT_PENDING
+            - PREPARING
+            - READY
+            - COMPLETED
+            - CANCELED
+          description: Estado de la orden
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total:
+          type: number
+          description: Total de la orden
+    OrderItem:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        price:
+          type: number
+          description: Precio del producto
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+    Variant:
+      type: object
+      properties:
+        removedIngredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RemovedIngredient'
+        quantity:
+          type: integer
+          description: Cantidad del variante
+    RemovedIngredient:
+      type: object
+      properties:
+        ingredient:
+          $ref: '#/components/schemas/Ingredient'
+        quantity:
+          type: integer
+          description: Cantidad del ingrediente removido
+        
+    PaginationResult:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Número de la página actual en la lista de productos
+        pageSize:
+          type: integer
+          description: Número de productos por página
+        total:
+          type: integer
+          description: Número total de productos disponibles
+      required:
+        - page
+        - pageSize
+        - total
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del producto
+        name:
+          type: string
+          description: El nombre del producto
+        image:
+          type: string
+          description: La imagen del producto
+        price:
+          type: number
+          description: El precio del producto
+        category:
+          $ref: '#/components/schemas/Category'
+          description: La categoría del producto
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              ingredient:
+                $ref: '#/components/schemas/Ingredient'
+                description: El ingrediente del producto
+              quantity:
+                type: number
+                description: La cantidad del ingrediente
+          description: Los ingredientes del producto
+      required:
+        - id
+        - name
+        - image
+        - price
+        - category
+        - ingredients
+
+    Provider:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del proveedor
+        name:
+          type: string
+          description: El nombre del proveedor
+      required:
+        - id
+        - name
+
+    Receiving:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único del ingreso de mercadería
+        movement:
+          $ref: '#/components/schemas/Movement'
+          description: El movimiento asociado al ingreso de mercadería
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              product:
+                $ref: '#/components/schemas/Product'
+                description: El producto del ingreso de mercadería
+              stock:
+                $ref: '#/components/schemas/Stock'
+                description: El stock del producto en el ingreso de mercadería
+              price:
+                type: number
+                description: El precio del producto
+          description: Los productos del ingreso de mercadería
+        createdDate:
+          type: string
+          format: date-time
+          description: La fecha de creación del ingreso de mercadería
+        createdBy:
+          type: number
+          description: El ID del usuario que creó el ingreso de mercadería
+    
+    Address:
+      type: object
+      properties:
+        address:
+          type: string
+        number:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        zipCode:
+          type: string
+        floor:
+          type: string
+        apartment:
+          type: string
+      required:
+        - address
+        - number
+        - city
+        - province
+        - zipCode
+        - floor
+        - apartment
+
+    AddressWithDetails:
+      type: object
+      properties:
+        address:
+          type: string
+        number:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        zipCode:
+          type: string
+        floor:
+          type: string
+        apartment:
+          type: string
+        details:
+          type: string
+      required:
+        - address
+        - number
+        - city
+        - province
+        - zipCode
+        - floor
+        - apartment
+        - details
+
+    SaleClientCuit:
+      type: object
+      properties:
+        razonSocial:
+          type: string
+        cuit:
+          type: string
+      required:
+        - razonSocial
+        - cuit
+
+    SaleClient:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phoneAreaCode:
+          type: string
+        phoneNumber:
+          type: string
+        dni:
+          type: string
+        billingAddress:
+          $ref: '#/components/schemas/Address'
+        cuit:
+          $ref: '#/components/schemas/SaleClientCuit'
+      required:
+        - name
+        - email
+        - phoneAreaCode
+        - phoneNumber
+        - dni
+        - billingAddress
+
+    SaleProduct:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        stock:
+          $ref: '#/components/schemas/Stock'
+        price:
+          $ref: '#/components/schemas/Price'
+      required:
+        - product
+        - stock
+        - price
+
+    SalePayment:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - cash
+            - debit_card
+            - credit_card
+            - transfer
+        details:
+          $ref: '#/components/schemas/Price'
+        transferReceipt:
+          type: string
+
+    SaleStatus:
+      type: string
+      enum:
+        - payment_pending
+        - paid
+        - completed
+        - cancelled
+
+    SaleInternalStatus:
+      type: string
+      enum:
+        - none
+        - separado
+        - preembalado
+        - etiqueta
+        - despachado
+        - retirado
+        - ya_cambio
+
+    SaleDeliveryType:
+      type: string
+      enum:
+        - store_pickup
+        - shipping
+
+    PersonalData:
+      type: object
+      properties:
+        name:
+          type: string
+        dni:
+          type: string
+        phoneAreaCode:
+          type: string
+        phoneNumber:
+          type: string
+      required:
+        - name
+        - dni
+        - phoneAreaCode
+        - phoneNumber
+
+    SaleDeliveryStorePickup:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SaleDeliveryType'
+        receiver:
+          $ref: '#/components/schemas/PersonalData'
+      required:
+        - type
+        - receiver
+
+    SaleShippingProviderCode:
+      type: string
+      enum:
+        - andreani
+
+    SaleShippingProviderAndreani:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/SaleShippingProviderCode'
+        trackingNumber:
+          type: string
+      required:
+        - code
+        - trackingNumber
+
+    SaleShippingProvider:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/SaleShippingProviderCode'
+        trackingNumber:
+          type: string
+      required:
+        - code
+        - trackingNumber
+
+    SaleDeliveryShipping:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SaleDeliveryType'
+        receiver:
+          $ref: '#/components/schemas/PersonalData'
+        address:
+          $ref: '#/components/schemas/Address'
+        shippingProvider:
+          $ref: '#/components/schemas/SaleShippingProvider'
+      required:
+        - type
+        - receiver
+        - address
+        - shippingProvider
+
+    SaleDelivery:
+      oneOf:
+        - $ref: '#/components/schemas/SaleDeliveryStorePickup'
+        - $ref: '#/components/schemas/SaleDeliveryShipping'
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        client:
+          $ref: '#/components/schemas/SaleClient'
+        comment:
+          type: string
+        delivery:
+          $ref: '#/components/schemas/SaleDelivery'
+        status:
+          $ref: '#/components/schemas/SaleStatus'
+        internalStatus:
+          $ref: '#/components/schemas/SaleInternalStatus'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleProduct'
+        total:
+          type: number
+          format: double
+        payment:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalePayment'
+        dateCreated:
+          type: string
+          format: date-time
+        datePaid:
+          type: string
+          format: date-time
+        dateCompleted:
+          type: string
+          format: date-time
+        dateCancelled:
+          type: string
+          format: date-time
+      required:
+        - id
+        - client
+        - status
+        - products
+        - total
+        - payment
+        - dateCreated
+
+    Store:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID de la tienda
+        name:
+          type: string
+          description: Nombre de la tienda
+        dateCreation:
+          type: string
+          format: date-time
+          description: Fecha de creación de la tienda
+        externalId:
+          type: string
+          nullable: true
+          description: ID externo de la tienda (si está disponible)
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: El ID único del usuario
+        name:
+          type: string
+          description: El nombre del usuario
+        email:
+          type: string
+          description: El email del usuario
+        picture:
+          type: string
+          description: La URL de la imagen de perfil del usuario
+      required:
+        - id
+        - email
+        - picture
+
+    WebConfig:
+      type: object
+      properties:
+        id:
+          type: number
+          description: El ID único de la configuración
+        backofficePrinterUrl:
+          type: string
+          description: La URL de la impresora del backoffice
+        clientPrinterUrl:
+          type: string
+          description: La URL de la impresora del cliente
